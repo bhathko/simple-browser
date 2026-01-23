@@ -71,4 +71,9 @@ export class Graphics {
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
     this.ctx.fill();
   }
+
+  measureText(text: string, fontSize: number = 20): number {
+    this.ctx.font = `${fontSize}px Arial`; // Ensure font matches before measuring
+    return this.ctx.measureText(text).width;
+  }
 }
