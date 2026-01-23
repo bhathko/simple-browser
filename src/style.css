@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 隱藏瀏覽器原本的捲軸 */
+  background-color: #222; /* 背景深色比較護眼 */
+}
+
+canvas {
+  display: block;
+}
