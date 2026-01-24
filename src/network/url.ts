@@ -1,6 +1,5 @@
-// this is our virtual file system for file:// URLs
+// Virtual file system for file:// URLs
 const VIRTUAL_FILE_SYSTEM: Record<string, string> = {
-  // when you input url = "file://
   "hello.html":
     "<html><body><h1>Hello from Local File!</h1><p>This is a virtual file.</p></body></html>",
   "test.txt": "Just some plain text content.",
@@ -28,7 +27,7 @@ export class URL {
         this.path = rest.substring(firstSlash);
       }
 
-      // 3. Parse Port (if there is :8080)
+      // 3. Parse Port (default to 80 if not specified)
       if (this.host.includes(":")) {
         const [host, port] = this.host.split(":");
         this.host = host;
@@ -40,38 +39,33 @@ export class URL {
       // file:// followed directly by the path
       this.host = "";
       this.port = 0;
-      this.path = rest; // here rest is the filename, e.g., "hello.html"
+      this.path = rest; // here rest is the filename
     }
   }
 
-  // Simulate Python's socket.request or file.read
-  // src/network/url.ts
+  /**
+   * Simulates a network request or file read.
+   * In a real browser, this would involve TCP sockets.
+   * Here, we use the browser's fetch API (via a proxy) or a virtual file system.
+   */
   async request(): Promise<string> {
     if (this.scheme === "file") {
-      // ... (previous virtual file system logic) ...
       return VIRTUAL_FILE_SYSTEM[this.path] || "File not found";
     }
 
     if (this.scheme === "http" || this.scheme === "https") {
-      // 【Key Difference】
-      // We do not create a TCP Socket, but call the browser's Fetch API
-      // It's like your engine outsources the "network department" to Chrome
       try {
         // 1. Send request
-        // Use Proxy Server to bypass CORS
+        // We use a local Proxy Server to bypass CORS restrictions in this browser-in-browser environment.
         const targetUrl = `http://${this.host}:${this.port}${this.path}`;
         const response = await fetch(
           `http://localhost:3000/proxy?url=${encodeURIComponent(targetUrl)}`,
         );
 
-        // 2. Simulate "read body" from the book
-        // The book spends a lot of time discussing transfer-encoding: chunked and gzip
-        // fetch has already handled these for you, so you get the decompressed string directly
+        // 2. Get Response Body
         const text = await response.text();
 
-        // 【Advanced Learning Point】
-        // Although we didn't write the Socket ourselves, you can print out the Response Headers to take a look
-        // This is very important for frontend debugging
+        // Log headers for debugging/educational purposes
         console.log("--- Response Headers ---");
         response.headers.forEach((value, key) => {
           console.log(`${key}: ${value}`);
@@ -81,7 +75,7 @@ export class URL {
         return text;
       } catch (e) {
         console.error(e);
-        return `Error: Could not fetch URL. (CORS limitation?)`;
+        return `Error: Could not fetch URL. (Check if the proxy server is running at localhost:3000)`;
       }
     }
 

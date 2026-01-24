@@ -44,9 +44,11 @@ export class Graphics {
     text: string,
     fontSize: number = 20,
     color: string = "black",
+    fontWeight: "normal" | "bold" | "italic" = "normal",
   ) {
     this.ctx.fillStyle = color;
-    this.ctx.font = `${fontSize}px Arial`;
+    const fontPart = fontWeight === "normal" ? "" : `${fontWeight} `;
+    this.ctx.font = `${fontPart}${fontSize}px Arial`;
     this.ctx.textBaseline = "top"; // align text from the left top
     this.ctx.fillText(text, x, y);
   }
@@ -72,8 +74,13 @@ export class Graphics {
     this.ctx.fill();
   }
 
-  measureText(text: string, fontSize: number = 20): number {
-    this.ctx.font = `${fontSize}px Arial`; // Ensure font matches before measuring
+  measureText(
+    text: string,
+    fontSize: number = 20,
+    fontWeight: "normal" | "bold" | "italic" = "normal",
+  ): number {
+    const fontPart = fontWeight === "normal" ? "" : `${fontWeight} `;
+    this.ctx.font = `${fontPart}${fontSize}px Arial`; // Ensure font matches before measuring
     return this.ctx.measureText(text).width;
   }
 }

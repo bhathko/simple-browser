@@ -2,11 +2,12 @@ import { Graphics } from "./platform/graphics";
 import { URL } from "./network/url";
 import { Layout } from "./layout/layout";
 import { HTMLParser } from "./parser/html";
+import type { LayoutNode } from "./dom/nodes";
 
 export class Browser {
   graphics: Graphics;
   scrollY: number = 0;
-  currentContent: string = "hello world";
+  currentContent: LayoutNode[] = [];
   currentUrl: string = "";
   layoutEngine: Layout | null = null;
 
@@ -16,30 +17,44 @@ export class Browser {
     window.addEventListener("wheel", (e) => this.handleScroll(e));
     window.addEventListener("resize", () => this.handleResize());
 
-    // Initial layout for the default "hello world"
+    // Initialize with empty content
+    this.currentContent = [];
     this.layoutEngine = new Layout(this.currentContent, this.graphics);
     this.layoutEngine.layout();
   }
 
-  // 載入 URL (這是第一章的重點，先留個空殼)
+  /**
+   * Loads a URL.
+   * This is the entry point for navigating to a page.
+   */
   async load(urlStr: string) {
     console.log(`Loading ${urlStr}...`);
     this.currentUrl = urlStr;
 
     try {
       const url = new URL(urlStr);
-      const body = await url.request(); // 取得內容 (HTML 字串)
-      this.currentContent = HTMLParser.parse(body); // 解析 HTML 取得純文字內容
+      const body = await url.request(); // Fetch content (HTML string)
+      
+      // Parse HTML to get the DOM tree and styles
+      const { root, styles } = HTMLParser.parse(body, {
+        fontSize: 16,
+        fontWeight: "normal",
+      });
+
+      console.log("Parsed Styles:", styles);
+      this.currentContent = root;
 
       // Update layout with new content
       this.layoutEngine = new Layout(this.currentContent, this.graphics);
       this.layoutEngine.layout();
-
-      // 暫時先把 HTML 原始碼直接印在螢幕上 (這是第一章的目標)
-      // 下一章我們才會寫 Parser 去把這些 tag 拿掉
       this.render();
     } catch (e) {
-      this.currentContent = `Error: ${e}`;
+      // Handle error by rendering the error message
+      const { root } = HTMLParser.parse(`Error: ${e}`, {
+        fontSize: 16,
+        fontWeight: "normal",
+      });
+      this.currentContent = root;
       this.layoutEngine = new Layout(this.currentContent, this.graphics);
       this.layoutEngine.layout();
       this.render();
@@ -47,12 +62,13 @@ export class Browser {
   }
 
   handleScroll(e: WheelEvent) {
-    // 簡單的滾動邏輯
+    // Simple scrolling logic
     this.scrollY += e.deltaY;
-    // 防止滾過頭 (簡單限制)
+    
+    // Prevent scrolling past the top
     if (this.scrollY < 0) this.scrollY = 0;
 
-    console.log(`ScrollY: ${this.scrollY}`);
+    // console.log(`ScrollY: ${this.scrollY}`); // Optional debug log
 
     this.render();
   }
@@ -67,7 +83,7 @@ export class Browser {
   }
 
   handleKey(e: KeyboardEvent) {
-    // 之後做向下捲動的功能
+    // ArrowDown for scrolling
     if (e.key === "ArrowDown") {
       this.scrollY += 30;
       this.render();
@@ -79,7 +95,6 @@ export class Browser {
 
     const toolbarHeight = 60;
 
-    // Draw Layout Display List
     // Content starts below the toolbar
     const contentStartY = toolbarHeight + 20;
 
@@ -96,6 +111,7 @@ export class Browser {
             item.text,
             item.fontSize,
             "black",
+            item.fontWeight,
           );
         }
       }
@@ -107,7 +123,7 @@ export class Browser {
   private drawToolbar(height: number) {
     const addressBarHeight = 30;
     const buttonRadius = 8;
-    const colseButtonColor = "#ea4335";
+    const closeButtonColor = "#ea4335";
     const collapseButtonColor = "#fbbc05";
     const maximizeButtonColor = "#34a853";
     const toolbarColor = "#f1f3f4";
@@ -125,7 +141,7 @@ export class Browser {
     // --- Navigation Buttons (Circles) ---
     const buttonY = height / 2;
     // Back
-    this.graphics.createCircle(30, buttonY, buttonRadius, colseButtonColor);
+    this.graphics.createCircle(30, buttonY, buttonRadius, closeButtonColor);
     // Forward
     this.graphics.createCircle(60, buttonY, buttonRadius, collapseButtonColor);
     // Refresh
