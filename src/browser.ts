@@ -3,6 +3,7 @@ import { URL } from "./network/url";
 import { Layout } from "./layout/layout";
 import { HTMLParser } from "./parser/html";
 import type { LayoutNode } from "./dom/nodes";
+import { defaultTextConfig, theme, layoutConfig } from "./config";
 
 export class Browser {
   graphics: Graphics;
@@ -36,10 +37,7 @@ export class Browser {
       const body = await url.request(); // Fetch content (HTML string)
       
       // Parse HTML to get the DOM tree and styles
-      const { root, styles } = HTMLParser.parse(body, {
-        fontSize: 16,
-        fontWeight: "normal",
-      });
+      const { root, styles } = HTMLParser.parse(body, defaultTextConfig);
 
       console.log("Parsed Styles:", styles);
       this.currentContent = root;
@@ -50,10 +48,7 @@ export class Browser {
       this.render();
     } catch (e) {
       // Handle error by rendering the error message
-      const { root } = HTMLParser.parse(`Error: ${e}`, {
-        fontSize: 16,
-        fontWeight: "normal",
-      });
+      const { root } = HTMLParser.parse(`Error: ${e}`, defaultTextConfig);
       this.currentContent = root;
       this.layoutEngine = new Layout(this.currentContent, this.graphics);
       this.layoutEngine.layout();
@@ -85,7 +80,7 @@ export class Browser {
   handleKey(e: KeyboardEvent) {
     // ArrowDown for scrolling
     if (e.key === "ArrowDown") {
-      this.scrollY += 30;
+      this.scrollY += layoutConfig.scroll.arrowKeyStep;
       this.render();
     }
   }
@@ -93,10 +88,10 @@ export class Browser {
   render() {
     this.graphics.clear();
 
-    const toolbarHeight = 60;
+    const toolbarHeight = layoutConfig.toolbar.height;
 
     // Content starts below the toolbar
-    const contentStartY = toolbarHeight + 20;
+    const contentStartY = toolbarHeight + layoutConfig.content.paddingTop;
 
     if (this.layoutEngine) {
       for (const item of this.layoutEngine.displayList) {
@@ -110,7 +105,7 @@ export class Browser {
             screenY,
             item.text,
             item.fontSize,
-            "black",
+            theme.textColor,
             item.fontWeight,
           );
         }
@@ -121,13 +116,8 @@ export class Browser {
   }
 
   private drawToolbar(height: number) {
-    const addressBarHeight = 30;
-    const buttonRadius = 8;
-    const closeButtonColor = "#ea4335";
-    const collapseButtonColor = "#fbbc05";
-    const maximizeButtonColor = "#34a853";
-    const toolbarColor = "#f1f3f4";
-    const addressBarColor = "#ffffff";
+    const addressBarHeight = layoutConfig.toolbar.addressBarHeight;
+    const buttonRadius = layoutConfig.toolbar.buttonRadius;
 
     // --- Toolbar Background ---
     this.graphics.createRectangle(
@@ -135,22 +125,22 @@ export class Browser {
       0,
       this.graphics.width,
       height,
-      toolbarColor,
+      theme.toolbar.background,
     );
 
     // --- Navigation Buttons (Circles) ---
     const buttonY = height / 2;
     // Back
-    this.graphics.createCircle(30, buttonY, buttonRadius, closeButtonColor);
+    this.graphics.createCircle(layoutConfig.toolbar.buttonSpacing, buttonY, buttonRadius, theme.toolbar.buttons.close);
     // Forward
-    this.graphics.createCircle(60, buttonY, buttonRadius, collapseButtonColor);
+    this.graphics.createCircle(layoutConfig.toolbar.buttonSpacing * 2, buttonY, buttonRadius, theme.toolbar.buttons.minimize);
     // Refresh
-    this.graphics.createCircle(90, buttonY, buttonRadius, maximizeButtonColor);
+    this.graphics.createCircle(layoutConfig.toolbar.buttonSpacing * 3, buttonY, buttonRadius, theme.toolbar.buttons.maximize);
     // --- Address Bar ---
-    const addressBarX = 110;
+    const addressBarX = layoutConfig.toolbar.addressBarX;
     const addressBarWidth = Math.max(
       200,
-      this.graphics.width - addressBarX - 15,
+      this.graphics.width - addressBarX - layoutConfig.toolbar.addressBarPadding,
     );
     const addressBarY = (height - addressBarHeight) / 2;
 
@@ -159,18 +149,18 @@ export class Browser {
       addressBarY,
       addressBarWidth,
       addressBarHeight,
-      15,
-      addressBarColor,
+      layoutConfig.toolbar.addressBarCornerRadius,
+      theme.toolbar.addressBarBackground,
     );
 
     // Address Bar Text
-    const textY = addressBarY + 8;
+    const textY = addressBarY + layoutConfig.toolbar.addressBarTextYOffset;
     this.graphics.createText(
-      addressBarX + 15,
+      addressBarX + layoutConfig.toolbar.addressBarPadding,
       textY,
       this.currentUrl || "about:blank",
-      16,
-      "#333",
+      layoutConfig.toolbar.addressBarFontSize,
+      theme.toolbar.addressBarText,
     );
   }
 }

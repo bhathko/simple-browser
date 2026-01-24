@@ -8,6 +8,7 @@ A toy browser engine implementation in TypeScript, designed to demonstrate the c
 src/
 ├── main.ts              # Entry point. Bootstraps the Browser instance.
 ├── browser.ts           # Main controller. Orchestrates fetching, parsing, layout, and rendering.
+├── config.ts            # Configuration for styling, layout, and theme.
 ├── dom/
 │   └── nodes.ts         # DOM Node definitions (LayoutNode).
 ├── layout/
